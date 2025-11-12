@@ -28,7 +28,7 @@ jobs:
             cd etl
             echo "Restarting services..."
             docker compose -f docker/docker-compose.yml --env-file .env pull || true
-            docker compose -f docker/docker-compose.yml --env-file .env up -d --build
+            docker compose -f docker/docker-compose.yml --env-file .env up -d --build --remove-orphans
             echo "Waiting for services to start..."
             sleep 15
             echo "Service status:"

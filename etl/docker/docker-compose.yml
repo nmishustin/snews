@@ -3,10 +3,8 @@ x-airflow-common: &airflow-common
     context: ..
     dockerfile: docker/Dockerfile
   environment: &airflow-env
-    AIRFLOW__CORE__EXECUTOR: ${AIRFLOW_EXECUTOR}
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: mysql+mysqlconnector://${MYSQL_USER}:${MYSQL_PASSWORD}@${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}?auth_plugin=caching_sha2_password
-    AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
-    AIRFLOW__CELERY__RESULT_BACKEND: db+mysql+mysqlconnector://${MYSQL_USER}:${MYSQL_PASSWORD}@${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}?auth_plugin=caching_sha2_password
     AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
     AIRFLOW__CORE__LOAD_EXAMPLES: ${AIRFLOW_LOAD_EXAMPLES}
     AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY}
@@ -31,21 +29,8 @@ x-airflow-common: &airflow-common
   depends_on:
     mysql:
       condition: service_healthy
-    redis:
-      condition: service_healthy
 
 services:
-  redis:
-    image: redis:7.2-alpine
-    ports:
-      - "127.0.0.1:6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: always
-
   mysql:
     image: mysql:8.4
     environment:
@@ -112,34 +97,6 @@ services:
       - "8080:8080"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/monitor/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    restart: always
-    depends_on:
-      airflow-init:
-        condition: service_completed_successfully
-
-  airflow-worker:
-    <<: *airflow-common
-    command: airflow celery worker
-    healthcheck:
-      test: ["CMD", "celery", "--app", "airflow.providers.celery.executors.celery_executor.app", "inspect", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    restart: always
-    depends_on:
-      airflow-init:
-        condition: service_completed_successfully
-
-  flower:
-    <<: *airflow-common
-    command: celery --app airflow.providers.celery.executors.celery_executor.app flower
-    ports:
-      - "5555:5555"
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
       interval: 30s
       timeout: 10s
       retries: 5
