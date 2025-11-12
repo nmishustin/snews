@@ -111,7 +111,7 @@ services:
     <<: *airflow-common
     command: airflow api-server
     ports:
-      - "127.0.0.1:8080:8080"
+      - "8080:8080"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 30s
@@ -139,7 +139,7 @@ services:
     <<: *airflow-common
     command: celery --app airflow.providers.celery.executors.celery_executor.app flower
     ports:
-      - "127.0.0.1:5555:5555"
+      - "5555:5555"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
       interval: 30s
