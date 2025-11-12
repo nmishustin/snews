@@ -1,11 +1,6 @@
 name: Deploy DAGs Only
 
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - 'etl/dags/**'
   workflow_dispatch:
 
 jobs:
