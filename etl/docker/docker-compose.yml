@@ -13,8 +13,8 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__TASK_RUNNER: airflow.task.task_runner.StandardTaskRunner
     AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
     AIRFLOW__CORE__EXECUTE_TASKS_NEW_PYTHON_INTERPRETER: "False"
-    AIRFLOW__DAG_PROCESSOR__REFRESH_INTERVAL: 10
-    AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL: 10
+    AIRFLOW__DAG_PROCESSOR__REFRESH_INTERVAL: 300
+    AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL: 300
 
     # --- Совместимо с Airflow 3 ---
     # Используем старый AIRFLOW_SECRET_KEY как общий API/JWT секрет
