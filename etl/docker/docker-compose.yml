@@ -5,20 +5,26 @@ x-airflow-common: &airflow-common
     context: ..
     dockerfile: docker/Dockerfile
   environment: &airflow-env
-    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: mysql+mysqlconnector://airflow:airflow@mysql:3306/airflow
+    AIRFLOW__CORE__EXECUTOR: ${AIRFLOW_EXECUTOR}
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: mysql+mysqlconnector://${MYSQL_USER}:${MYSQL_PASSWORD}@${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}?auth_plugin=caching_sha2_password
     AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
-    AIRFLOW__CELERY__RESULT_BACKEND: db+mysql+mysqlconnector://airflow:airflow@mysql:3306/airflow
-    AIRFLOW__CORE__FERNET_KEY: 'your_fernet_key_here_generate_with_cryptography_fernet'
-    AIRFLOW__CORE__LOAD_EXAMPLES: 'False'
-    AIRFLOW__WEBSERVER__SECRET_KEY: 'your_secret_key_here'
-    AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: 10
+    AIRFLOW__CELERY__RESULT_BACKEND: db+mysql+mysqlconnector://${MYSQL_USER}:${MYSQL_PASSWORD}@${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}?auth_plugin=caching_sha2_password
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
+    AIRFLOW__CORE__LOAD_EXAMPLES: ${AIRFLOW_LOAD_EXAMPLES}
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY}
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+    AIRFLOW__DAG_PROCESSOR__REFRESH_INTERVAL: 10
     AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL: 10
-    MYSQL_HOST: mysql
-    MYSQL_PORT: 3306
-    MYSQL_DATABASE: snews
-    MYSQL_USER: airflow
-    MYSQL_PASSWORD: airflow
+    # Application DB config (for DAGs)
+    APP_MYSQL_HOST: ${MYSQL_HOST}
+    APP_MYSQL_PORT: ${MYSQL_PORT}
+    APP_MYSQL_DATABASE: ${APP_MYSQL_DATABASE}
+    APP_MYSQL_USER: ${APP_MYSQL_USER}
+    APP_MYSQL_PASSWORD: ${APP_MYSQL_PASSWORD}
+    # External services
+    TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+    TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+    OPENAI_API_KEY: ${OPENAI_API_KEY}
   volumes:
     - ../dags:/opt/airflow/dags
     - ../logs:/opt/airflow/logs
@@ -34,7 +40,7 @@ services:
   redis:
     image: redis:7.2-alpine
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -43,39 +49,69 @@ services:
     restart: always
 
   mysql:
-    image: mysql:8.0
+    image: mysql:8.4
     environment:
-      MYSQL_ROOT_PASSWORD: rootpass
-      MYSQL_DATABASE: airflow
-      MYSQL_USER: airflow
-      MYSQL_PASSWORD: airflow
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpass"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: always
 
   airflow-init:
     <<: *airflow-common
     entrypoint: /bin/bash
     command: >
-      -c "airflow db migrate && python3 /opt/airflow/etl/docker/create_user.py"
+      -c "airflow db migrate && airflow users create --username "$${AIRFLOW_ADMIN_USERNAME}" --password "$${AIRFLOW_ADMIN_PASSWORD}" --firstname "$${AIRFLOW_ADMIN_FIRSTNAME:-Admin}" --lastname "$${AIRFLOW_ADMIN_LASTNAME:-User}" --role Admin --email "$${AIRFLOW_ADMIN_EMAIL:-admin@example.com}" || echo "User already exists""
     restart: on-failure
     environment:
       <<: *airflow-env
-      AIRFLOW_ADMIN_USERNAME: admin
-      AIRFLOW_ADMIN_PASSWORD: admin
+      AIRFLOW_ADMIN_USERNAME: ${AIRFLOW_ADMIN_USERNAME}
+      AIRFLOW_ADMIN_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD}
+      AIRFLOW_ADMIN_FIRSTNAME: ${AIRFLOW_ADMIN_FIRSTNAME:-Admin}
+      AIRFLOW_ADMIN_LASTNAME: ${AIRFLOW_ADMIN_LASTNAME:-User}
+      AIRFLOW_ADMIN_EMAIL: ${AIRFLOW_ADMIN_EMAIL:-admin@example.com}
 
-  airflow-standalone:
+  airflow-scheduler:
     <<: *airflow-common
-    command: airflow standalone
+    command: airflow scheduler
+    healthcheck:
+      test: ["CMD", "airflow", "jobs", "check", "--job-type", "SchedulerJob", "--hostname", "$${HOSTNAME}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: always
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-dag-processor:
+    <<: *airflow-common
+    command: airflow dag-processor
+    healthcheck:
+      test: ["CMD", "airflow", "jobs", "check", "--job-type", "DagProcessorJob", "--hostname", "$${HOSTNAME}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: always
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: airflow api-server
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 30s
@@ -103,9 +139,22 @@ services:
     <<: *airflow-common
     command: celery --app airflow.providers.celery.executors.celery_executor.app flower
     ports:
-      - "5555:5555"
+      - "127.0.0.1:5555:5555"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: always
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-triggerer:
+    <<: *airflow-common
+    command: airflow triggerer
+    healthcheck:
+      test: ["CMD", "airflow", "jobs", "check", "--job-type", "TriggererJob", "--hostname", "$${HOSTNAME}"]
       interval: 30s
       timeout: 10s
       retries: 5

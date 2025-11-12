@@ -14,15 +14,23 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
+# Check .env file exists
+if [ ! -f "$PROJECT_ROOT/.env" ]; then
+    echo "❌ .env file not found!"
+    echo "Please copy .env.example to .env and configure it:"
+    echo "  cp .env.example .env"
+    exit 1
+fi
+
 # Start services
-cd "$PROJECT_ROOT" && docker-compose -f docker/docker-compose.yml up -d
+cd "$PROJECT_ROOT" && docker-compose -f docker/docker-compose.yml --env-file .env up -d
 
 echo ""
 echo "⏳ Waiting for services to become healthy..."
 sleep 10
 
 # Show status
-cd "$PROJECT_ROOT" && docker-compose -f docker/docker-compose.yml ps
+cd "$PROJECT_ROOT" && docker-compose -f docker/docker-compose.yml --env-file .env ps
 
 echo ""
 echo "✅ Airflow infrastructure started!"
@@ -34,8 +42,8 @@ echo "   - MySQL: localhost:3306"
 echo "   - Redis: localhost:6379"
 echo ""
 echo "🔑 Default credentials:"
-echo "   Username: admin"
-echo "   Password: check logs with: ./logs.sh airflow-standalone | grep 'Password for user'"
+echo "   Username: Check .env file (AIRFLOW_ADMIN_USERNAME)"
+echo "   Password: Check .env file (AIRFLOW_ADMIN_PASSWORD)"
 echo ""
 echo "📝 Useful commands:"
 echo "   ./logs.sh [service]  - View logs"

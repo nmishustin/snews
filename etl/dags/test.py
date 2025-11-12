@@ -1,4 +1,4 @@
-from airflow.sdk import dag, task
+from airflow.decorators import dag, task
 from datetime import datetime
 
 
@@ -13,8 +13,8 @@ def test_task():
     start_date=datetime(2025, 1, 1),
     catchup=False,
 )
-def test_dag():
+def test():
     test_task()
 
 
-dag_instance = test_dag()
+dag = test()

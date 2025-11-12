@@ -12,14 +12,14 @@ cd "$PROJECT_ROOT"
 
 if [ -z "$SERVICE" ]; then
     echo "🔄 Restarting all services..."
-    docker-compose -f docker/docker-compose.yml restart
+    docker-compose -f docker/docker-compose.yml --env-file .env restart
     echo "✅ All services restarted!"
 else
     echo "🔄 Restarting $SERVICE..."
-    docker-compose -f docker/docker-compose.yml restart "$SERVICE"
+    docker-compose -f docker/docker-compose.yml --env-file .env restart "$SERVICE"
     echo "✅ Service $SERVICE restarted!"
 fi
 
 echo ""
-docker-compose -f docker/docker-compose.yml ps
+docker-compose -f docker/docker-compose.yml --env-file .env ps
 

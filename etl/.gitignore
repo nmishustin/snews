@@ -45,6 +45,7 @@ ENV/
 .env
 .env.local
 .env.*.local
+!.env.example
 
 # Docker volumes (если будут локальные бэкапы)
 *.sql
