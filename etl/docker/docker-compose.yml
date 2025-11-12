@@ -9,6 +9,7 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__LOAD_EXAMPLES: ${AIRFLOW_LOAD_EXAMPLES}
     AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY}
     AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+    AIRFLOW__CORE__TASK_RUNNER: airflow.task.task_runner.StandardTaskRunner
     AIRFLOW__DAG_PROCESSOR__REFRESH_INTERVAL: 10
     AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL: 10
     AIRFLOW__CORE__EXECUTE_TASKS_NEW_PYTHON_INTERPRETER: "False"
