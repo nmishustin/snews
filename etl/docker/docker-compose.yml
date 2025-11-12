@@ -108,7 +108,7 @@ services:
     <<: *airflow-common
     environment:
       <<: *airflow-env
-      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-webserver:8080
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-webserver:8080/execution/
       AIRFLOW__LOGGING__LOGGING_LEVEL: DEBUG
     command: airflow scheduler
     healthcheck:
