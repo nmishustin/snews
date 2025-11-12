@@ -10,11 +10,11 @@ echo "📊 Airflow ETL Infrastructure Status"
 echo "===================================="
 echo ""
 
-docker-compose -f docker/docker-compose.yml --env-file .env ps
+docker compose -f docker/docker-compose.yml --env-file .env ps
 
 echo ""
 echo "💾 Docker Resources:"
-docker-compose -f docker/docker-compose.yml --env-file .env exec mysql mysql -u$(grep MYSQL_USER .env | cut -d '=' -f2) -p$(grep MYSQL_PASSWORD .env | cut -d '=' -f2) -e "SELECT COUNT(*) as 'Total DAGs' FROM airflow.dag;" 2>/dev/null || echo "   MySQL not accessible"
+docker compose -f docker/docker-compose.yml --env-file .env exec mysql mysql -u$(grep MYSQL_USER .env | cut -d '=' -f2) -p$(grep MYSQL_PASSWORD .env | cut -d '=' -f2) -e "SELECT COUNT(*) as 'Total DAGs' FROM airflow.dag;" 2>/dev/null || echo "   MySQL not accessible"
 
 echo ""
 echo "📊 Quick Health Check:"

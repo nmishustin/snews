@@ -11,9 +11,9 @@ cd "$PROJECT_ROOT"
 
 if [ $# -eq 0 ]; then
     echo "🔧 Opening shell in $SERVICE..."
-    docker-compose -f docker/docker-compose.yml --env-file .env exec "$SERVICE" /bin/bash
+    docker compose -f docker/docker-compose.yml --env-file .env exec "$SERVICE" /bin/bash
 else
     echo "🔧 Executing command in $SERVICE..."
-    docker-compose -f docker/docker-compose.yml --env-file .env exec "$SERVICE" "$@"
+    docker compose -f docker/docker-compose.yml --env-file .env exec "$SERVICE" "$@"
 fi
 

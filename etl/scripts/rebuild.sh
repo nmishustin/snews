@@ -12,21 +12,21 @@ cd "$PROJECT_ROOT"
 
 # Stop services
 echo "🛑 Stopping services..."
-docker-compose -f docker/docker-compose.yml --env-file .env down
+docker compose -f docker/docker-compose.yml --env-file .env down
 
 # Rebuild
 echo "🏗️  Building new image..."
-docker-compose -f docker/docker-compose.yml --env-file .env build --no-cache
+docker compose -f docker/docker-compose.yml --env-file .env build --no-cache
 
 # Start services
 echo "🚀 Starting services with new image..."
-docker-compose -f docker/docker-compose.yml --env-file .env up -d
+docker compose -f docker/docker-compose.yml --env-file .env up -d
 
 echo ""
 echo "⏳ Waiting for services to start..."
 sleep 15
 
-docker-compose -f docker/docker-compose.yml --env-file .env ps
+docker compose -f docker/docker-compose.yml --env-file .env ps
 
 echo ""
 echo "✅ Rebuild complete!"

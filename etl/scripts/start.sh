@@ -4,9 +4,9 @@ set -e
 
 echo "🚀 Starting Airflow ETL Infrastructure..."
 
-# Check if docker-compose is available
-if ! command -v docker-compose &> /dev/null; then
-    echo "❌ docker-compose not found. Please install Docker Compose."
+# Check if docker compose is available
+if ! docker compose version &> /dev/null; then
+    echo "❌ docker compose not found. Please install Docker Compose."
     exit 1
 fi
 
@@ -23,14 +23,14 @@ if [ ! -f "$PROJECT_ROOT/.env" ]; then
 fi
 
 # Start services
-cd "$PROJECT_ROOT" && docker-compose -f docker/docker-compose.yml --env-file .env up -d
+cd "$PROJECT_ROOT" && docker compose -f docker/docker-compose.yml --env-file .env up -d
 
 echo ""
 echo "⏳ Waiting for services to become healthy..."
 sleep 10
 
 # Show status
-cd "$PROJECT_ROOT" && docker-compose -f docker/docker-compose.yml --env-file .env ps
+cd "$PROJECT_ROOT" && docker compose -f docker/docker-compose.yml --env-file .env ps
 
 echo ""
 echo "✅ Airflow infrastructure started!"

@@ -25,7 +25,7 @@ cd "$PROJECT_ROOT"
 
 echo ""
 echo "🛑 Stopping services..."
-docker-compose -f docker/docker-compose.yml --env-file .env down -v
+docker compose -f docker/docker-compose.yml --env-file .env down -v
 
 echo "🗑️  Removing logs..."
 rm -rf logs/*
