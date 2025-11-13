@@ -1,11 +1,11 @@
-name: Deploy DAGs Only
+name: Deploy DAGs
 
 on:
   workflow_dispatch:
 
 jobs:
   deploy-dags:
-    name: Deploy DAGs to VPS
+    name: Deploy DAGs
     runs-on: ubuntu-latest
     
     steps:

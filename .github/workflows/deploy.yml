@@ -1,11 +1,11 @@
-name: Deploy to VPS
+name: Deploy Infra
 
 on:
   workflow_dispatch:  # Allows manual trigger
 
 jobs:
   deploy:
-    name: Deploy to Production VPS
+    name: Deploy Infra
     runs-on: ubuntu-latest
     
     steps:
