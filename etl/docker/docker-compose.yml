@@ -71,15 +71,22 @@ services:
   airflow-init:
     <<: *airflow-common
     entrypoint: /bin/bash
-    command: >
-      -c "airflow db migrate &&
-          airflow users create
-            --username \"$${AIRFLOW_ADMIN_USERNAME}\"
-            --password \"$${AIRFLOW_ADMIN_PASSWORD}\"
-            --firstname \"${AIRFLOW_ADMIN_FIRSTNAME:-Admin}\"
-            --lastname \"${AIRFLOW_ADMIN_LASTNAME:-User}\"
-            --role Admin
-            --email \"${AIRFLOW_ADMIN_EMAIL:-admin@example.com}\" || echo 'User already exists'"
+    command:
+      - -c
+      - |
+        airflow db migrate
+        if ! airflow users list | grep -q $${AIRFLOW_ADMIN_USERNAME}; then
+          echo "Creating admin user $${AIRFLOW_ADMIN_USERNAME}..."
+          airflow users create \
+            --username $${AIRFLOW_ADMIN_USERNAME} \
+            --password $${AIRFLOW_ADMIN_PASSWORD} \
+            --firstname $${AIRFLOW_ADMIN_FIRSTNAME:-Admin} \
+            --lastname $${AIRFLOW_ADMIN_LASTNAME:-User} \
+            --role Admin \
+            --email $${AIRFLOW_ADMIN_EMAIL:-admin@example.org}
+        else
+          echo "Admin user $${AIRFLOW_ADMIN_USERNAME} already exists, skipping creation."
+        fi
     restart: on-failure
     environment:
       <<: *airflow-env
